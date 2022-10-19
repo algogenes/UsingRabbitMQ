@@ -1,8 +1,9 @@
 package com.airtime.dtos;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id", scope = Transaction.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Transaction {
 	private String accountNumber;
 	private String mobileNumber;
@@ -10,12 +11,22 @@ public class Transaction {
 	private String status;
 	
 	public Transaction() {}
-	public Transaction(String accountNumber, String mobileNumber, double amount, String status) {
+	public Transaction(String accountNumber, String mobileNumber, Integer amount, String status) {
 		
 		this.accountNumber = accountNumber;
 		this.mobileNumber = mobileNumber;
 		this.amount = amount;
 		this.status = status;
+	}
+
+	public Transaction(String accountNumber, String mobileNumber, String amount, String status) {
+
+		this.accountNumber = accountNumber;
+		this.mobileNumber = mobileNumber;
+		this.amount = Double.parseDouble(amount);
+		this.status = status;
+
+
 	}
 	public String getAccountNumber() {
 		return accountNumber;

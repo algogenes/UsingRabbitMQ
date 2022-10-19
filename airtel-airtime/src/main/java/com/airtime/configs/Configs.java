@@ -9,8 +9,15 @@ import org.springframework.context.annotation.Configuration;
 
 import com.airtime.service.AirtelService;
 
+import javax.annotation.PostConstruct;
+
 @Configuration
 public class Configs {
+
+    @PostConstruct
+    void setup(){
+        System.out.println("COnfig set up");
+    }
     @Value("${airtime.rabbitmq.queue}")
     String queueName;
 
