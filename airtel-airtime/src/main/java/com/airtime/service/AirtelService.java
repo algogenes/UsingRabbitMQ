@@ -1,4 +1,8 @@
 package com.airtime.service;
+
+import com.airtime.dtos.Transaction;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
@@ -6,51 +10,52 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.airtime.dtos.Transaction;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.annotation.PostConstruct;
 
 @Service
-public class AirtelService implements MessageListener{
-	
+public class AirtelService implements MessageListener {
+
 	@Autowired
-	private AmqpTemplate amqpTemplate;
+	publisher publisher;
 	
-	@Value("${publisher.rabbitmq.exchange}")
-	private String exchange;
+//	public void onMessage(Message message) {
+//    	ObjectMapper mapper = new ObjectMapper();
+//        System.out.println("Consuming Message - " + new String(message.getBody()));
+//        String trxnString = new String(message.getBody());
+//		System.out.println("new String"+trxnString);
+//		try {
+//			Transaction trxn = mapper.readValue(message.getBody(), Transaction.class);
+//			System.out.println("Account numberis :" + trxn.getAccountNumber());
+//			trxn.setStatus("processed");
+//			 publisher.publish(String.valueOf(trxn));
+//    		System.out.println("Publishing to queue with name processed = " + trxn);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//    }
 	
-	@Value("${publisher.rabbitmq.routingkey}")
-	private String routingkey;
-	
-	public void onMessage(Message message) {
-    	ObjectMapper mapper = new ObjectMapper();
-        System.out.println("Consuming Message - " + new String(message.getBody()));
-        String trxnString = new String(message.getBody());
-        
-        System.out.println("amqpTemplate is - " + amqpTemplate.toString());
-        
-        try {
-			Transaction trxn = mapper.readValue(trxnString, Transaction.class);
-			System.out.println("Account numberis :" + trxn.getAccountNumber());
-			
-			   //another one
-			trxn.setStatus("processed");
-			//System.out.println("amqpTemplate is - " + amqpTemplate.toString());
-    		//amqpTemplate.convertAndSend(this.exchange, this.routingkey, trxn);
-    		System.out.println("Publishing to queue with name processed = " + trxn);
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}        
-    }
-	
-	public void send(Transaction trxn) {
-		amqpTemplate.convertAndSend(exchange, routingkey, trxn);
-		System.out.println("Send msg = " + trxn);
+	public void send(Transaction trxn) throws JsonProcessingException {
+		String res = new ObjectMapper().writeValueAsString(trxn);
+		publisher.publish(res);
+		System.out.println("Send msg = " + res);
 	    
 	}
-	
 
+
+	@Override
+	public void onMessage(Message message) {
+		ObjectMapper mapper = new ObjectMapper();
+        System.out.println("Consuming Message - " + new String(message.getBody()));
+        String trxnString = new String(message.getBody());
+		System.out.println("new String"+trxnString);
+		try {
+			Transaction trxn = mapper.readValue(message.getBody(), Transaction.class);
+			System.out.println("Account numberis :" + trxn.getAccountNumber());
+			trxn.setStatus("processed");
+			 publisher.publish(String.valueOf(trxn));
+    		System.out.println("Publishing to queue with name processed = " + trxn);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
